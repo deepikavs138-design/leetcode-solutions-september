@@ -1,0 +1,95 @@
+#include <vector>
+#include <string>
+#include <queue>
+#include <cstring>
+
+using namespace std;
+
+class Solution {
+public:
+    int minMoves(vector<string>& classroom, int energy) {
+        int m = classroom.size();
+        int n = classroom[0].size();
+        
+        int startX = -1, startY = -1;
+        int litterCount = 0;
+        int litterId[20][20];
+        memset(litterId, -1, sizeof(litterId));
+        
+        // Find starting position and assign a unique bit-index to each 'L'
+        for (int i = 0; i < m; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (classroom[i][j] == 'S') {
+                    startX = i;
+                    startY = j;
+                } else if (classroom[i][j] == 'L') {
+                    litterId[i][j] = litterCount++;
+                }
+            }
+        }
+        
+        int targetMask = (1 << litterCount) - 1;
+        if (targetMask == 0) return 0; // Edge case: No litter to clean
+        
+        // visited[x][y][mask] stores the maximum energy encountered at this state
+        int visited[20][20][1024];
+        memset(visited, -1, sizeof(visited));
+        
+        struct State {
+            int x, y, mask, e;
+        };
+        
+        queue<State> q;
+        q.push({startX, startY, 0, energy});
+        visited[startX][startY][0] = energy;
+        
+        int dirs[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        int steps = 0;
+        
+        while (!q.empty()) {
+            int size = q.size();
+            
+            while (size--) {
+                auto curr = q.front();
+                q.pop();
+                
+                // If we've collected all litter, return the current step count
+                if (curr.mask == targetMask) return steps;
+                
+                // If we are out of energy, we cannot move further from this cell
+                if (curr.e == 0) continue; 
+                
+                for (int i = 0; i < 4; ++i) {
+                    int nx = curr.x + dirs[i][0];
+                    int ny = curr.y + dirs[i][1];
+                    
+                    // Check bounds and obstacle
+                    if (nx >= 0 && nx < m && ny >= 0 && ny < n && classroom[nx][ny] != 'X') {
+                        int next_e = curr.e - 1;
+                        
+                        // If it's a reset area, restore to max energy
+                        if (classroom[nx][ny] == 'R') {
+                            next_e = energy;
+                        }
+                        
+                        int next_mask = curr.mask;
+                        
+                        // If it's litter, update the mask
+                        if (classroom[nx][ny] == 'L') {
+                            next_mask |= (1 << litterId[nx][ny]);
+                        }
+                        
+                        // Only push to queue if we arrive with strictly more energy than a previous visit to this state
+                        if (next_e > visited[nx][ny][next_mask]) {
+                            visited[nx][ny][next_mask] = next_e;
+                            q.push({nx, ny, next_mask, next_e});
+                        }
+                    }
+                }
+            }
+            steps++; // Increment steps after processing a full BFS level
+        }
+        
+        return -1; // Impossible to collect all litter
+    }
+};
