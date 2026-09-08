@@ -1,0 +1,12 @@
+class Solution {
+public:
+    int countCommas(int n) {
+        // If the number is less than 1,000, it has 0 commas.
+        if (n < 1000) {
+            return 0;
+        }
+        // Every number from 1,000 to 100,000 has exactly 1 comma.
+        // Therefore, the total commas is simply the count of numbers >= 1000.
+        return n - 999;
+    }
+};
