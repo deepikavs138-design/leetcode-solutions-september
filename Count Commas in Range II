@@ -1,0 +1,20 @@
+class Solution {
+public:
+    long long countCommas(long long n) {
+        long long ans = 0;
+        
+        // Define ranges: [start, end] with commas = level
+        vector<long long> starts = {1000LL, 1000000LL, 1000000000LL, 1000000000000LL, 1000000000000000LL};
+        vector<long long> ends   = {999999LL, 999999999LL, 999999999999LL, 999999999999999LL, 999999999999999999LL};
+        
+        for (int i = 0; i < starts.size(); i++) {
+            if (n >= starts[i]) {
+                long long upper = min(n, ends[i]);
+                long long count = upper - starts[i] + 1;
+                ans += count * (i + 1); // i+1 commas
+            }
+        }
+        
+        return ans;
+    }
+};
