@@ -1,0 +1,79 @@
+class Solution {
+public:
+    vector<int> maximumWeight(vector<vector<int>>& intervals) {
+        int n = intervals.size();
+        vector<array<long long, 3>> arr(n);
+        for (int i = 0; i < n; i++) {
+            arr[i] = {intervals[i][0], intervals[i][1], intervals[i][2]};
+        }
+
+        // Sort by end time
+        vector<int> idx(n);
+        iota(idx.begin(), idx.end(), 0);
+        sort(idx.begin(), idx.end(), [&](int a, int b) {
+            return arr[a][1] < arr[b][1];
+        });
+
+        // Precompute prev using Binary Search (O(N log N) instead of O(N^2))
+        vector<int> prev(n, -1);
+        for (int i = 0; i < n; i++) {
+            int low = 0, high = i - 1;
+            int best_j = -1;
+            while (low <= high) {
+                int mid = low + (high - low) / 2;
+                if (arr[idx[mid]][1] < arr[idx[i]][0]) {
+                    best_j = mid;
+                    low = mid + 1; // Try to find a closer interval
+                } else {
+                    high = mid - 1;
+                }
+            }
+            prev[i] = best_j;
+        }
+
+        // dp[i][k] = best choice up to i with k intervals
+        vector<vector<long long>> dp(n + 1, vector<long long>(5, 0));
+        vector<vector<vector<int>>> choice(n + 1, vector<vector<int>>(5));
+
+        for (int i = 1; i <= n; i++) {
+            for (int k = 1; k <= 4; k++) {
+                // Option 1: skip
+                dp[i][k] = dp[i - 1][k];
+                choice[i][k] = choice[i - 1][k];
+
+                // Option 2: take
+                int j = prev[i - 1];
+                long long val = arr[idx[i - 1]][2] + (j == -1 ? 0 : dp[j + 1][k - 1]);
+                
+                vector<int> cand;
+                if (j != -1) cand = choice[j + 1][k - 1];
+                cand.push_back(idx[i - 1]);
+                
+                // Sort immediately so lexicographical comparison works correctly
+                sort(cand.begin(), cand.end()); 
+
+                // Compare
+                if (val > dp[i][k] || (val == dp[i][k] && cand < choice[i][k])) {
+                    dp[i][k] = val;
+                    choice[i][k] = cand;
+                }
+            }
+        }
+
+        // Best among k=1..4
+        long long best = -1;
+        vector<int> ans;
+        for (int k = 1; k <= 4; k++) {
+            if (dp[n][k] > best) {
+                best = dp[n][k];
+                ans = choice[n][k];
+            } else if (dp[n][k] == best) {
+                if (choice[n][k] < ans) {
+                    ans = choice[n][k];
+                }
+            }
+        }
+
+        return ans;
+    }
+};
