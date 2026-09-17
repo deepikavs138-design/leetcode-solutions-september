@@ -1,0 +1,31 @@
+class Solution {
+public:
+    int minSumOfLengths(vector<int>& arr, int target) {
+        int n = arr.size();
+        vector<int> best(n, INT_MAX);
+        
+        unordered_map<int,int> prefixIndex;
+        prefixIndex[0] = -1; // prefix sum base case
+        
+        int prefix = 0, ans = INT_MAX, minLen = INT_MAX;
+        
+        for (int i = 0; i < n; i++) {
+            prefix += arr[i];
+            
+            if (prefixIndex.count(prefix - target)) {
+                int start = prefixIndex[prefix - target] + 1;
+                int len = i - start + 1;
+                
+                if (start > 0 && best[start - 1] != INT_MAX) {
+                    ans = min(ans, best[start - 1] + len);
+                }
+                minLen = min(minLen, len);
+            }
+            
+            best[i] = minLen;
+            prefixIndex[prefix] = i;
+        }
+        
+        return ans == INT_MAX ? -1 : ans;
+    }
+};
