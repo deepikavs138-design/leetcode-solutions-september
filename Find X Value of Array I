@@ -1,0 +1,46 @@
+class Solution {
+public:
+    vector<long long> resultArray(vector<int>& nums, int k) {
+        vector<long long> result(k, 0);
+        vector<long long> count(k, 0);
+        vector<long long> next_count(k, 0);
+        vector<int> active;
+        
+        for (int num : nums) {
+            int val = num % k;
+            vector<int> next_active;
+            
+            // Helper to update our next state
+            auto add = [&](int p, long long freq) {
+                if (next_count[p] == 0) {
+                    next_active.push_back(p);
+                }
+                next_count[p] += freq;
+            };
+            
+            // 1. A subarray containing just the current element
+            add(val, 1);
+            
+            // 2. Extend all existing subarrays ending at the previous index
+            for (int p : active) {
+                add((1LL * p * val) % k, count[p]);
+            }
+            
+            // Clear the old active elements in the count array
+            for (int p : active) {
+                count[p] = 0;
+            }
+            
+            // Commit next_count to count, accumulate results, and reset next_count
+            for (int p : next_active) {
+                count[p] = next_count[p];
+                result[p] += count[p];
+                next_count[p] = 0; 
+            }
+            
+            active = move(next_active);
+        }
+        
+        return result;
+    }
+};
