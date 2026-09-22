@@ -1,0 +1,116 @@
+#include <vector>
+
+using namespace std;
+
+class Solution {
+    struct Node {
+        long long total_prod;
+        long long prefix_counts[5];
+        
+        Node() {
+            total_prod = 1; 
+            for (int i = 0; i < 5; ++i) {
+                prefix_counts[i] = 0;
+            }
+        }
+    };
+
+    vector<Node> tree;
+
+    // Merges two segment tree nodes
+    Node merge(const Node& L, const Node& R, int k) {
+        Node M;
+        M.total_prod = (L.total_prod * R.total_prod) % k;
+        
+        // Inherit prefix counts directly from the left child
+        for (int i = 0; i < k; ++i) {
+            M.prefix_counts[i] = L.prefix_counts[i];
+        }
+        
+        // Append right child prefixes multiplied by the total product of the left child
+        for (int i = 0; i < k; ++i) {
+            if (R.prefix_counts[i] > 0) {
+                int new_mod = (L.total_prod * i) % k;
+                M.prefix_counts[new_mod] += R.prefix_counts[i];
+            }
+        }
+        return M;
+    }
+
+    void build(int node, int l, int r, const vector<int>& nums, int k) {
+        if (l == r) {
+            tree[node].total_prod = nums[l] % k;
+            tree[node].prefix_counts[nums[l] % k] = 1;
+            return;
+        }
+        int mid = l + (r - l) / 2;
+        build(2 * node + 1, l, mid, nums, k);
+        build(2 * node + 2, mid + 1, r, nums, k);
+        tree[node] = merge(tree[2 * node + 1], tree[2 * node + 2], k);
+    }
+
+    void update(int node, int l, int r, int idx, int val, int k) {
+        if (l == r) {
+            tree[node].total_prod = val % k;
+            for(int i = 0; i < k; ++i) {
+                tree[node].prefix_counts[i] = 0;
+            }
+            tree[node].prefix_counts[val % k] = 1;
+            return;
+        }
+        int mid = l + (r - l) / 2;
+        if (idx <= mid) {
+            update(2 * node + 1, l, mid, idx, val, k);
+        } else {
+            update(2 * node + 2, mid + 1, r, idx, val, k);
+        }
+        tree[node] = merge(tree[2 * node + 1], tree[2 * node + 2], k);
+    }
+
+    Node query(int node, int l, int r, int ql, int qr, int k) {
+        if (ql <= l && r <= qr) {
+            return tree[node];
+        }
+        int mid = l + (r - l) / 2;
+        if (qr <= mid) {
+            return query(2 * node + 1, l, mid, ql, qr, k);
+        } else if (ql > mid) {
+            return query(2 * node + 2, mid + 1, r, ql, qr, k);
+        } else {
+            return merge(
+                query(2 * node + 1, l, mid, ql, qr, k),
+                query(2 * node + 2, mid + 1, r, ql, qr, k), 
+                k
+            );
+        }
+    }
+
+public:
+    vector<int> resultArray(vector<int>& nums, int k, vector<vector<int>>& queries) {
+        int n = nums.size();
+        tree.assign(4 * n, Node());
+        
+        build(0, 0, n - 1, nums, k);
+        
+        vector<int> res;
+        res.reserve(queries.size());
+        
+        for (const auto& q : queries) {
+            int index = q[0];
+            int value = q[1];
+            int start = q[2];
+            int x = q[3];
+            
+            // 1. Update the value in the segment tree
+            update(0, 0, n - 1, index, value, k);
+            
+            // 2. Query the requested prefix counts in range [start, n - 1]
+            Node ans = query(0, 0, n - 1, start, n - 1, k);
+            
+            // 3. Store the count of valid paths corresponding to the requested modulo `x`
+            res.push_back(ans.prefix_counts[x]);
+        }
+        
+        return res;
+    }
+};
