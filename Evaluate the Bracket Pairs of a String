@@ -1,0 +1,42 @@
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+class Solution {
+public:
+    std::string evaluate(std::string s, std::vector<std::vector<std::string>>& knowledge) {
+        // Store knowledge in a hash map for O(1) lookups
+        std::unordered_map<std::string, std::string> dict;
+        for (const auto& pair : knowledge) {
+            dict[pair[0]] = pair[1];
+        }
+
+        std::string result = "";
+        std::string current_key = "";
+        bool in_bracket = false;
+
+        // Iterate through the string to evaluate the brackets
+        for (char c : s) {
+            if (c == '(') {
+                in_bracket = true;
+                current_key = ""; // Reset key for the new bracket pair
+            } else if (c == ')') {
+                in_bracket = false;
+                // Check if the key exists in our knowledge map
+                if (dict.find(current_key) != dict.end()) {
+                    result += dict[current_key];
+                } else {
+                    result += "?";
+                }
+            } else {
+                if (in_bracket) {
+                    current_key += c; // Build the key
+                } else {
+                    result += c; // Append normal characters outside brackets
+                }
+            }
+        }
+
+        return result;
+    }
+};
